@@ -3,6 +3,7 @@ from __future__ import annotations
 import argparse
 import json
 import re
+import sys
 import unicodedata
 from pathlib import Path
 from zipfile import ZipFile
@@ -10,6 +11,8 @@ from zipfile import ZipFile
 
 DEFAULT_TOSCA_DIR = Path("tosca")
 DEFAULT_OUTPUT_DIR = Path("exporter_helpers/out")
+
+BUFFER_VALUE_PATTERN = re.compile(r"Buffer with name '([^']+)' has been set to value '([^']*)'")
 
 
 def clean_text(raw: str) -> str:
@@ -41,6 +44,20 @@ def extract_docx_lines(docx_path: Path) -> list[str]:
     chunks = re.findall(r"<w:t[^>]*>(.*?)</w:t>", xml)
     lines = [clean_text(chunk) for chunk in chunks]
     return [line for line in lines if is_useful_line(line)]
+
+
+def extract_buffer_values(lines: list[str]) -> dict[str, str]:
+    """Extrae los valores reales de buffers asignados durante la ejecución.
+
+    Ej.: "NroDocumento: Buffer with name 'NroDocumento' has been set to value '20252658794'."
+    → {"NroDocumento": "20252658794"}
+    """
+    values: dict[str, str] = {}
+    for line in lines:
+        match = BUFFER_VALUE_PATTERN.search(line)
+        if match:
+            values[match.group(1)] = match.group(2)
+    return values
 
 
 def sanitize_name(filename: str) -> str:
@@ -75,6 +92,9 @@ def resolve_output_path(docx_path: Path, output_dir: Path) -> Path:
 
 
 def main() -> None:
+    if hasattr(sys.stdout, "reconfigure"):
+        sys.stdout.reconfigure(encoding="utf-8", errors="replace")
+
     parser = argparse.ArgumentParser(
         description="Extrae texto plano de Docu Snaper (.docx) para soporte del caso."
     )
@@ -114,6 +134,7 @@ def main() -> None:
             "source": str(docx_path),
             "line_count": len(lines),
             "lines": lines,
+            "buffer_values": extract_buffer_values(lines),
         }
 
         out_path.parent.mkdir(parents=True, exist_ok=True)

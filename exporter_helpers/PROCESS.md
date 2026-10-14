@@ -36,8 +36,9 @@ C:/Users/cristian.rosa/exporter/.venv/Scripts/python.exe exporter_helpers/extrac
 ## 5. Fuentes para redactar el markdown
 1. `sections.Caso` del JSON de Excel — fuente principal de pasos.
 2. `sections.Pre-Caso` y `sections.Post-Caso` — para filtrar ruido técnico y extraer datos iniciales.
-3. `variables` del JSON de Excel — para la tabla de Test Data.
-4. JSON de Docx — solo como apoyo para clarificar pantallas/flujo.
+3. `test_data` del JSON de Excel — fuente principal de la tabla de Test Data (ver §6).
+4. `buffer_values` del JSON de Docx — valores reales ejecutados (para completar la columna Valor cuando aplique).
+5. `lines` del JSON de Docx — solo como apoyo para clarificar pantallas/flujo.
 
 ## 6. Reglas de extracción
 
@@ -56,6 +57,25 @@ C:/Users/cristian.rosa/exporter/.venv/Scripts/python.exe exporter_helpers/extrac
 - Incluir solo las relevantes al navegador en `Test Data / Parámetros`.
 - Excluir variables de contexto desktop/SO.
 - No hardcodear valores en pasos.
+
+### Test data (identificación de parámetros)
+El script `extract_tosca_excel.py` ya genera la lista `test_data` con **toda** la test data relevante, clasificada y con descripción funcional. No inventarla a mano; usarla como base y completarla si falta algo evidente.
+
+Cada entrada de `test_data` tiene:
+- `name`: nombre limpio del parámetro (ej. `UrlScacs`, `Password`, `Flujo_1`).
+- `reference`: cómo se referencia (`` `{CP[Nombre]}` `` para variables CP; el nombre del campo para literales/credenciales).
+- `kind`: `cp` (parametrizada), `credential` (usuario/contraseña sin valor) o `literal` (valor fijo).
+- `category`: `url`, `usuario`, `password`, `documento`, `ambiente`, `estado`, `valor` u `otro`.
+- `description`: descripción funcional legible.
+- `value`: valor concreto si está presente; `null` si no.
+- `value_legend`: `"Por favor proveer este valor"` cuando el valor falta.
+- `hint`: nota aclaratoria cuando el "valor" era en realidad una descripción (ej. montos "Se declara por CP…").
+
+**Debe identificarse toda la test data relevante**, incluso cuando el valor no esté presente (URLs, usuario, contraseña, documento, ambiente, estados, montos, valores). Si el valor falta, se coloca la leyenda `"Por favor proveer este valor"`.
+
+**Completar valores desde `buffer_values` del Docx** cuando el nombre coincida (ej. `{CP[NroDocumento]}` ← `buffer_values.NroDocumento = "20252658794"`). Si no hay coincidencia, dejar la leyenda.
+
+**Excluir** de la tabla: variables internas de buffer `{B[...]}`, variables técnicas de control (`Etiqueta`, `Exportar`) y cualquier dato de contexto desktop/SO (rutas de red, nombres de archivo de reporte, `Passed`, `--`, etc.).
 
 ## 7. Nivel de detalle de navegación (CRÍTICO)
 > ⚠️ **NO colapsar acciones de navegación en pasos genéricos.** El markdown debe ser lo suficientemente detallado para que un automatizador pueda implementarlo sin ambigüedad.
@@ -107,13 +127,14 @@ Descripción concisa del propósito de la prueba. Usar negritas (**valor**) para
 ## Test Data / Parámetros
 | Variable              | Descripción                          | Valor                    |
 |-----------------------|--------------------------------------|--------------------------|
-| `{CP[Variable]}`      | Descripción funcional del parámetro  | (vacío o valor fijo)     |
+| `{CP[Variable]}`      | Descripción funcional del parámetro  | (valor o leyenda)        |
 
 **Reglas para tabla de test data:**
-- Incluir solo variables `{CP[...]}` que aparezcan como Input en la sección Caso.
-- Columna **Descripción** con texto funcional legible (no repetir la variable).
-- Columna **Valor** vacía si es parametrizable; completarla si el valor es fijo.
+- Construirla desde `test_data` del JSON de Excel (ver §6); incluir **todos** los parámetros relevantes: URLs, usuario, contraseña, documento, ambiente, estados, montos y valores, aunque su valor no esté presente.
+- Columna **Descripción**: usar el texto funcional de `description` (no repetir la variable).
+- Columna **Valor**: usar `value` si está presente; si `value` es `null`, escribir la leyenda `Por favor proveer este valor` (en cursiva). Si el Docx aporta un valor real en `buffer_values` con el mismo nombre, usarlo.
 - Excluir variables internas de buffer `{B[...]}` y variables técnicas de control como `{CP[Etiqueta]}` o `{CP[Exportar]}`.
+- Para credenciales sin valor (ej. `Password`), incluir la fila con su leyenda; no omitirlas.
 - Envolver cada nombre de variable en backticks: `` `{CP[Nombre]}` ``.
 - Alinear columnas para que todas las filas tengan el mismo ancho por columna.
 
@@ -161,6 +182,7 @@ Estado final esperado del entorno. Descartar pasos técnicos de SO/cierre forzad
 - [ ] Solo se incluyeron pasos ejecutables en navegador.
 - [ ] Se excluyeron acciones desktop/SO.
 - [ ] Variables relevantes centralizadas en `Test Data / Parámetros`.
+- [ ] Se identificó **toda** la test data (URL, usuario, contraseña, documento, ambiente, estados, montos, valores) y los valores faltantes llevan la leyenda `Por favor proveer este valor`.
 - [ ] Hay aserciones claras y verificables.
 - [ ] No hay recomendaciones técnicas de implementación.
 - [ ] **Cada interacción del Excel (click, input, select, verify) tiene su propio paso o sub-paso — no hay pasos genéricos que colapsen múltiples acciones.**
