@@ -1,106 +1,205 @@
-# Caso 077 - Cálculo para la habilitación
+# TC-077: Verificar garantías parciales vencidas sin check
 
-## Objetivo
-Validar que una solicitud **preaprobada** en **estado Calificada** con garantías parciales vencidas, sin check, pueda consultarse y revisarse el cálculo de límites vigentes para confirmar que el valor **Habilitado** sea **0,00** en la pantalla correspondiente.
+## Propósito
 
-## Alcance
-- Incluye únicamente acciones funcionales dentro del navegador web (SCACS).
-- Incluye el flujo principal de login, navegación por menú, búsqueda de propuestas, selección de solicitud, validación de resumen y comprobación de límites vigentes.
-- Excluye limpieza técnica de browser, comandos de sistema operativo, apps de escritorio y registro en Excel de resultados.
+Verificar que la solicitud preaprobada calificada del cliente no habilita límite de crédito: el valor de **Habilitado** en la última fila de **LÍMITES VIGENTES** debe ser **0,00**.
+
+## Descripción
+
+El caso abre SCACS en una sesión limpia, inicia sesión y navega a **Búsqueda de Propuestas**. Busca al cliente por documento, filtra las propuestas por flujo **Solicitud Preaprobada** y estado **Calificada**, abre el resumen y consulta la solicitud. Si aparece la pantalla **Inicio Solicitud Garantías**, continúa mediante **CONSULTAR SOLICITUD**. Finalmente abre las pestañas **Límites** y **LÍMITES VIGENTES** y comprueba que **Habilitado** en la última fila sea **0,00**.
+
+## Data I/O
+
+| Tipo | Campo | Descripción | Valor |
+|------|-------|-------------|-------|
+| Input | UrlScacs | URL base de SCACS | *Por favor proveer este valor* |
+| Input | UsuarioSCACS | Usuario de acceso a la aplicación | *Por favor proveer este valor* |
+| Input | Password | Contraseña de acceso a la aplicación | *Por favor proveer este valor* |
+| Input | NroDocumento | Número de documento del cliente | `20252658794` (buffer DOCX; ver discrepancia en Observaciones) |
+| Input | Ambiente | Ambiente/entorno objetivo de la prueba | Testing |
+| Input | Flujo_1 | Flujo a seleccionar en el filtro | Solicitud Preaprobada |
+| Input | Estado Propuesta_1 | Estado a seleccionar en el filtro | Calificada |
+| Input | Descripcion1 | Descripción de la garantía 1 a validar; el origen indica que se declara por CP | *Por favor proveer este valor* |
+| Input | Descripcion2 | Descripción de la garantía 2 a validar; el origen indica que se declara por CP | *Por favor proveer este valor* |
+| Input | Monto1 | Monto asociado a la garantía 1; el origen indica que se declara por CP | *Por favor proveer este valor* |
+| Input | Monto2 | Monto asociado a la garantía 2; el origen indica que se declara por CP | *Por favor proveer este valor* |
+| Output | Habilitado | Valor verificado en la última fila de LÍMITES VIGENTES | 0,00 |
+| Output | resultado | Estado de la prueba: Pass / Fail | *Por favor proveer este valor* |
+
+---
 
 ## Precondiciones
-- El usuario de SCACS con permisos de consulta/operación está habilitado para acceder al sistema.
-- El cliente con documento `{CP[NroDocumento]}` existe y tiene una solicitud en estado **Calificada** con flujo **Solicitud Preaprobada**.
-- El entorno objetivo es **Testing** y la aplicación está disponible.
-- Los datos de garantía a validar (Descripcion1, Descripcion2, Monto1 y Monto2) se encuentran definidos para la prueba.
 
-## Test Data / Parámetros
-| Variable | Descripción | Valor |
-|----------|-------------|-------|
-| `{CP[UrlScacs]}` | URL del portal/aplicación utilizada durante la prueba. | *Por favor proveer este valor* |
-| `{CP[UsuarioSCACS]}` | Usuario de acceso a la aplicación. | *Por favor proveer este valor* |
-| `Password` | Contraseña de acceso a la aplicación. | *Por favor proveer este valor* |
-| `{CP[NroDocumento]}` | Número de documento del cliente a evaluar. | 20252658794 |
-| `Ambiente` | Ambiente/entorno objetivo de la prueba. | Testing |
-| `Estado Propuesta_1` | Estado a seleccionar/filtrar en la búsqueda. | Calificada |
-| `Flujo_1` | Flujo a seleccionar en el filtro de búsqueda. | Solicitud Preaprobada |
-| `Descripcion1` | Descripción a validar durante la prueba. | *Por favor proveer este valor* |
-| `Descripcion2` | Descripción a validar durante la prueba. | *Por favor proveer este valor* |
-| `Monto1` | Monto a validar durante la prueba. | *Por favor proveer este valor* |
-| `Monto2` | Monto a validar durante la prueba. | *Por favor proveer este valor* |
+- [ ] Iniciar en una sesión de navegador limpia, sin una sesión previa de SCACS.
+- [ ] Tener acceso a la URL de SCACS y credenciales válidas en Data I/O.
+- [ ] Tener disponible el cliente correspondiente al parámetro `NroDocumento` y una solicitud **Solicitud Preaprobada** en estado **Calificada**.
+- [ ] Confirmar el número de documento que se usará: los archivos fuente presentan valores distintos (ver Observaciones).
+- [ ] No se requiere modificar la solicitud; la consulta del caso es de solo lectura.
 
-## Pasos (Step-by-step)
-1. **Acción:** Abrir la URL de SCACS en el navegador del entorno **Testing**.
-   **Resultado esperado:** La pantalla de login de SCACS se carga correctamente.
+---
 
-2. **Acción:** En la pantalla de ingreso, completar "Usuario" con `{CP[UsuarioSCACS]}` y la contraseña correspondiente en "Password".
-   **Resultado esperado:** Los campos quedan con los datos del usuario y se habilita el acceso al sistema.
+## Steps
 
-3. **Acción:** Hacer click en "LOGIN".
-   **Resultado esperado:** El sistema autentica al usuario y carga la pantalla principal de SCACS.
+### 1. Preparación
 
-4. **Acción:** Hacer click en "Menu Hamburguesa".
-   **Resultado esperado:** Se despliega el menú lateral de navegación.
+| # | Acción | Resultado esperado |
+|--:|:-------|:-------------------|
+| 1.1 | Navegar a `{CP[UrlScacs]}` | Se muestra la página de inicio de sesión de SCACS |
+| 1.2 | Verificar que no haya una sesión anterior activa | Se muestra la pantalla **SCACS - Login** |
 
-5. **Acción:** Hacer click en "Búsqueda de Propuestas" dentro del menú lateral.
-   **Resultado esperado:** Se abre la pantalla de búsqueda de propuestas y queda lista para filtrar registros.
+---
 
-6. **Acción:** Hacer click en "Rueda Filtro Propuestas".
-   **Resultado esperado:** Se expande el panel de filtros de propuestas.
+### 2. Iniciar sesión
 
-7. **Acción:** En el filtro de búsqueda, completar "Número Documento" con `{CP[NroDocumento]}`.
-   **Resultado esperado:** El campo muestra el documento del cliente a consultar.
+| # | Acción | Resultado esperado |
+|--:|:-------|:-------------------|
+| 2.1 | Ingresar `{CP[UsuarioSCACS]}` en `Usuario` | El campo Usuario queda completado |
+| 2.2 | Esperar 5 segundos | La pantalla de login queda lista para continuar |
+| 2.3 | Ingresar la contraseña provista en `Password` | El campo Password queda completado |
+| 2.4 | Hacer click en `LOGIN` | SCACS acepta el acceso y muestra la página principal |
+| 2.5 | Esperar 8 segundos | La página principal termina de cargar |
 
-8. **Acción:** Hacer click en "Lupa para buscar Cliente".
-   **Resultado esperado:** Se abre la búsqueda del cliente asociado al documento.
+---
 
-9. **Acción:** En la búsqueda del cliente, ingresar `{CP[NroDocumento]}` en "Número Documento" y hacer click en "Buscar".
-   **Resultado esperado:** La grilla de resultados muestra al cliente correspondiente y queda disponible para seleccionar.
+### 3. Abrir Búsqueda de Propuestas
 
-10. **Acción:** Seleccionar la primera fila de la tabla de resultados del cliente.
-    **Resultado esperado:** El cliente queda seleccionado y se retorna a la pantalla de búsqueda de propuestas con el registro listo para continuar.
+| # | Acción | Resultado esperado |
+|--:|:-------|:-------------------|
+| 3.1 | Hacer click en `Menu Hamburguesa` | Se despliega el menú de navegación |
+| 3.2 | Esperar 7,5 segundos | El menú queda disponible |
+| 3.3 | Hacer click en `Búsqueda de Propuestas` | Se abre la pantalla de búsqueda |
+| 3.4 | Esperar 3 segundos | La pantalla termina de cargar |
 
-11. **Acción:** En los filtros, seleccionar "Calificada" en "Estado Propuesta" y "Solicitud Preaprobada" en "Flujo"; luego hacer click en "Buscar".
-    **Resultado esperado:** La grilla muestra las propuestas del cliente en el estado y flujo solicitados.
+---
 
-12. **Acción:** Seleccionar la primera fila de la tabla "Tabla Propuestas" cuyo estado sea "Calificada".
-    **Resultado esperado:** Se abre la propuesta seleccionada y queda visible el detalle de la solicitud.
+### 4. Abrir el filtro de propuestas
 
-13. **Acción:** Hacer click en "Resumen".
-    **Resultado esperado:** Se carga la vista resumen de la propuesta con los datos y garantías asociados.
+| # | Acción | Resultado esperado |
+|--:|:-------|:-------------------|
+| 4.1 | Hacer click en `Rueda Filtro Propuestas` | Se despliega el panel Filtro Propuestas |
+| 4.2 | Esperar 2 segundos | El panel queda disponible |
 
-14. **Acción:** Revisar los datos de garantía y validar que se correspondan con los valores de Descripcion1, Descripcion2, Monto1 y Monto2 definidos para la prueba.
-    **Resultado esperado:** La pantalla refleja la garantía a evaluar y los valores esperados quedan visibles en el resumen.
+---
 
-15. **Acción:** Hacer click en "Consultar".
-    **Resultado esperado:** Se abre la pantalla de detalle de la solicitud asociada a la garantía.
+### 5. Buscar el cliente por documento
 
-16. **Acción:** Si aparece la pantalla "Inicio Solicitud Garantías", entonces hacer click en "Consultar Solicitud".
-    **Resultado esperado:** Se ingresa al detalle de la solicitud y la navegación continúa en la pantalla de gestión de garantías.
+| # | Acción | Resultado esperado |
+|--:|:-------|:-------------------|
+| 5.1 | Hacer click en `Lupa para buscar Cliente` | Se abre el modal **Selección de Cliente** |
+| 5.2 | Ingresar `{CP[NroDocumento]}` en `Número Documento` | El campo Número Documento queda completado |
+| 5.3 | Esperar 2 segundos | El dato ingresado queda listo para buscar |
+| 5.4 | Hacer click en `Buscar` del modal | Se muestran los resultados de clientes |
+| 5.5 | Esperar 15 segundos | La búsqueda de clientes termina |
+| 5.6 | Seleccionar la primera fila de la tabla de resultados | El cliente queda seleccionado |
+| 5.7 | Esperar 10 segundos | Se actualiza el filtro con el cliente seleccionado |
+| 5.8 | Esperar 2 segundos | El filtro queda listo para continuar |
 
-17. **Acción:** Hacer click en la pestaña "Límites".
-    **Resultado esperado:** Se despliega la vista de límites y se habilita la consulta de límites vigentes.
+---
 
-18. **Acción:** Hacer click en "Límites Vigentes".
-    **Resultado esperado:** Se abre la tabla de límites vigentes para la solicitud.
+### 6. Filtrar por flujo
 
-19. **Acción:** Validar la fila correspondiente y comprobar el valor de la columna "Habilitado".
-    **Resultado esperado:** El sistema muestra el valor **0,00** para la solicitud analizada, indicando que no hay saldo habilitado.
+| # | Acción | Resultado esperado |
+|--:|:-------|:-------------------|
+| 6.1 | En `Flujo_1`, seleccionar `Solicitud Preaprobada` | Queda seleccionado el flujo Solicitud Preaprobada |
+| 6.2 | Hacer click en `Buscar` | Se muestran las propuestas que cumplen el filtro |
+| 6.3 | Esperar 5 segundos | La tabla de propuestas termina de actualizarse |
 
-## Validaciones clave (assertions)
-- La pantalla de login de SCACS se carga correctamente para el usuario indicado.
-- La búsqueda de propuestas con documento `{CP[NroDocumento]}` devuelve resultados válidos para el cliente.
-- La propuesta seleccionada corresponde a **Estado Propuesta = Calificada** y **Flujo = Solicitud Preaprobada**.
-- El resumen de la propuesta refleja los datos esperados de garantía y montos definidos por la prueba.
-- La pantalla de límites vigentes queda visible y el valor **Habilitado** es **0,00**.
+---
+
+### 7. Filtrar por estado
+
+| # | Acción | Resultado esperado |
+|--:|:-------|:-------------------|
+| 7.1 | En `Estado Propuesta_1`, seleccionar `Calificada` | Queda seleccionado el estado Calificada |
+| 7.2 | Hacer click en `Buscar` | Se muestran las propuestas calificadas |
+| 7.3 | Esperar 2 segundos | La tabla de propuestas termina de actualizarse |
+
+---
+
+### 8. Abrir la solicitud calificada
+
+| # | Acción | Resultado esperado |
+|--:|:-------|:-------------------|
+| 8.1 | Verificar que la fila seleccionada tenga `Estado` igual a `Calificada` | La fila corresponde a una solicitud calificada |
+| 8.2 | Hacer click en `Estado` de esa fila | Se abre la solicitud calificada |
+
+---
+
+### 9. Abrir el resumen de la propuesta
+
+| # | Acción | Resultado esperado |
+|--:|:-------|:-------------------|
+| 9.1 | Hacer click en `Resumen` | Se muestra el Resumen de Propuesta |
+| 9.2 | Esperar 3 segundos | El resumen termina de cargar |
+
+---
+
+### 10. Consultar la solicitud
+
+| # | Acción | Resultado esperado |
+|--:|:-------|:-------------------|
+| 10.1 | Hacer click en `Consultar` | Se abre la consulta de la solicitud |
+| 10.2 | Esperar 3 segundos | La pantalla de consulta termina de cargar |
+| 10.3 | *(Condicional)* Si aparece `Inicio Solicitud Garantías`, hacer click en `CONSULTAR SOLICITUD` | Se muestra la solicitud para continuar |
+| 10.4 | *(Condicional)* Si se ejecutó 10.3, esperar 2 segundos | La solicitud termina de cargar |
+
+---
+
+### 11. Abrir la pestaña Límites
+
+| # | Acción | Resultado esperado |
+|--:|:-------|:-------------------|
+| 11.1 | Hacer click en la pestaña `Límites` | Se muestra la sección Límites |
+| 11.2 | Esperar 2 segundos | La sección termina de cargar |
+
+---
+
+### 12. Verificar el límite habilitado
+
+| # | Acción | Resultado esperado |
+|--:|:-------|:-------------------|
+| 12.1 | Hacer click en `LÍMITES VIGENTES` | Se muestra la tabla de límites vigentes |
+| 12.2 | Esperar 3 segundos | La tabla termina de cargar |
+| 12.3 | Seleccionar la última fila de `Tabla con Limites` | Queda seleccionada la última fila |
+| 12.4 | Verificar `Habilitado` en la última fila | El valor es **0,00** |
+
+---
+
+## Resultado Esperado
+
+| Verificación | Valor esperado |
+|:-------------|:---------------|
+| `Habilitado` en la última fila de LÍMITES VIGENTES | 0,00 |
+| Resultado de la prueba | Pass si la verificación coincide; en caso contrario, Fail |
+
+---
 
 ## Observaciones generales
-- La navegación se realiza por menú lateral, filtros, tablas y detales de propuesta; no se requieren pasos técnicos de escritorio ni limpieza del browser.
-- Se debe respetar la espera de carga de pantallas y tablas, especialmente al abrir filtros, ejecutar búsquedas y mostrar la grilla de límites vigentes.
-- La validación de `Habilitado` es la aserción central del caso; cualquier valor distinto de **0,00** debe considerarse un fallo del caso.
-- La rama condicional del paso 16 queda habilitada solo si la pantalla "Inicio Solicitud Garantías" aparece como resultado intermedio de la navegación.
+
+- La búsqueda contiene una discrepancia de datos: el Excel usa `{CP[NroDocumento]}` sin valor; el buffer del DOCX aporta `20252658794`, mientras que el texto y las capturas de DokuSnapper muestran `44145555`. Se conserva el valor del buffer como referencia y debe confirmarse el número correcto antes de ejecutar; no se deben tratar ambos valores como equivalentes.
+- La captura de login muestra el usuario `2225`, pero el Excel define `{CP[UsuarioSCACS]}` sin valor. Se mantiene la leyenda de dato faltante en Data I/O y no se toma la captura como sustituto de la parametrización.
+- Los waits de 2, 3, 5, 7,5, 8, 10 y 15 segundos reflejan las esperas del flujo Tosca tras las acciones correspondientes.
+- La ruta condicional `Inicio Solicitud Garantías` solo se sigue cuando aparece esa pantalla.
+- Se revisaron evidencias visuales DokuSnapper de login, filtros, selección del cliente, resumen y límites. Las capturas respaldan la pantalla de consulta y el valor verificado; no se incorporan acciones de limpieza de escritorio ni manejo de ventanas del sistema operativo.
 
 ## Postcondiciones / Limpieza
-- La solicitud queda revisada en pantalla y la validación de límites vigentes se encuentra concluida.
-- El estado final del caso queda en **verificado** cuando el valor de **Habilitado** coincide con **0,00**.
-- No se ejecutan acciones de sistema operativo ni cierre forzado del browser como parte del caso.
+
+- La consulta no debe modificar la solicitud ni los límites.
+- Si el entorno requiere cerrar la sesión, usar la opción funcional `Salir` del menú de SCACS.
+
+---
+
+## Flujo
+
+Preparación (URL base + sesión limpia)
+  → Iniciar sesión
+    → Menu Hamburguesa → Búsqueda de Propuestas
+      → Filtro Propuestas → buscar cliente por documento
+        → Seleccionar primera fila del cliente
+          → Filtrar Flujo: Solicitud Preaprobada
+            → Filtrar Estado: Calificada
+              → Abrir solicitud → Resumen → Consultar
+                → [Condicional: Inicio Solicitud Garantías → CONSULTAR SOLICITUD]
+                  → Pestaña Límites → LÍMITES VIGENTES
+                    → Verificar: Habilitado en última fila == 0,00
+                      → Limpieza / Postcondiciones
